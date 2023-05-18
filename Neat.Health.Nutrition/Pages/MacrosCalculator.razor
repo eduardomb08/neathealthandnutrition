@@ -1,0 +1,118 @@
+﻿@page "/"
+@using Neat.Health.DietAndFitness
+@using System.ComponentModel
+
+<style>
+    .toggle-btn {
+        width: 75px;
+    }
+</style>
+
+<div class="container">
+    <h3>Macros Calculator</h3>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="gender">Gender:</label>
+                <select id="gender" class="form-control" @bind="@Person.Gender">
+                    @foreach (var gender in Enum.GetValues(typeof(Gender)))
+                    {
+                        <option value="@gender">@gender</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="age">Age:</label>
+                <input id="age" type="number" class="form-control" @bind="@Person.Age" />
+            </div>
+
+            <div class="form-group">
+                <label>Height:</label>
+                <div class="input-group">
+                    <input type="number" class="form-control rounded-end" @bind="@Person.Height" />
+                    <div class="input-group-append">
+                        <button type="button" class="btn btn-toggle btn-outline-secondary @(Person.HeightUnit == HeightUnit.Centimeters ? "active" : "") toggle-btn ms-2" @onclick="() => Person.HeightUnit = HeightUnit.Centimeters">cm</button>
+                        <button type="button" class="btn btn-toggle btn-outline-secondary btn-toggle-wide @(Person.HeightUnit == HeightUnit.Inches ? "active" : "") toggle-btn" @onclick="() => Person.HeightUnit = HeightUnit.Inches">inches</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="weight">Weight:</label>
+                <div class="input-group">
+                    <input type="number" class="form-control rounded-end" @bind="@Person.Weight" />
+                    <div class="input-group-append">
+                        <button type="button" class="btn btn-toggle btn-outline-secondary @(Person.WeightUnit == WeightUnit.Kilograms ? "active" : "") toggle-btn ms-2" @onclick="() => Person.WeightUnit = WeightUnit.Kilograms">kg</button>
+                        <button type="button" class="btn btn-toggle btn-outline-secondary btn-toggle-wide @(Person.WeightUnit == WeightUnit.Pounds ? "active" : "") toggle-btn" @onclick="() => Person.WeightUnit = WeightUnit.Pounds">pounds</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="activityLevel">Activity Level:</label>
+                <select id="activityLevel" class="form-control" @bind="@Person.ActivityLevel">
+                    @foreach (var level in Enum.GetValues(typeof(ActivityLevel)))
+                    {
+                        var description = level.GetType()
+                                              .GetField(level.ToString())
+                                              .GetCustomAttributes(typeof(DescriptionAttribute), false)
+                                              .OfType<DescriptionAttribute>()
+                                              .FirstOrDefault()?.Description;
+
+                        <option value="@level">@description</option>
+                    }
+                </select>
+            </div>
+
+            <div>
+                <label for="bodyType">Body Type (optional):</label>
+                <select id="bodyType" class="form-control" @bind="@Person.BodyType">
+                    @foreach (var bodyType in Enum.GetValues(typeof(BodyType)))
+                    {
+                        <option value="@bodyType">@bodyType</option>
+                    }
+                </select>
+            </div>
+
+            <button class="btn btn-primary" @onclick="CalculateMacros">Calculate Macros</button>
+        </div>
+
+        <div class="col-md-6">
+            @if (showResults)
+            {
+                <h4>Results:</h4>
+                <p>BMR: @Person.CalculateBMR()</p>
+                <p>TDEE: @Person.CalculateTDEE() kcal</p>
+
+                <h4>Macros for Diet:</h4>
+                <table>
+                    <tr>
+                        <th>Macro</th>
+                        <th>Grams</th>
+                    </tr>
+                    @foreach (var macro in Macros)
+                    {
+                        <tr>
+                            <td>@macro.Key</td>
+                            <td>@macro.Value</td>
+                        </tr>
+                    }
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private Person Person { get; set; } = new Person();
+    private bool showResults = false;
+    private Dictionary<string, decimal> Macros { get; set; } = null!;
+
+    private void CalculateMacros()
+    {
+        Macros = Person.CalculateMacros();
+        showResults = true;
+    }
+}
